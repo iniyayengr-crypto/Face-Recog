@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gentle Face Recognition</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #d7e3fc, #fce2e2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+
+    header {
+      margin-top: 30px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      color: #222;
+    }
+
+    header h1 span {
+      color: #0077ff;
+    }
+
+    header p {
+      color: #555;
+      margin-top: 5px;
+    }
+
+    .controls {
+      margin: 20px 0;
+    }
+
+    button {
+      margin: 10px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+      font-weight: bold;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    .upload-btn {
+      background-color: #4db6ac;
+      color: white;
+    }
+
+    .webcam-btn {
+      background-color: #0077ff;
+      color: white;
+    }
+
+    #video-container {
+      margin-top: 20px;
+      border: 3px solid #0077ff;
+      border-radius: 12px;
+      overflow: hidden;
+      width: 500px;
+      height: 400px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+    }
+
+    #video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>💙 Gentle <span>Face Recognition</span> Care</h1>
+    <p>Helping Alzheimer’s patients recognize loved ones with compassion & tech</p>
+  </header>
+
+  <div class="controls">
+    <button class="upload-btn" onclick="document.getElementById('fileUpload').click()">📂 Upload & Train</button>
+    <input type="file" id="fileUpload" style="display: none" />
+    <button class="webcam-btn" onclick="startWebcam()">📷 Start Webcam</button>
+  </div>
+
+  <div id="video-container">
+    <span>Recognition Zone</span>
+  </div>
+
+  <script>
+    async function startWebcam() {
+      const container = document.getElementById("video-container");
+      container.innerHTML = ""; // Clear placeholder text
+
+      const video = document.createElement("video");
+      video.autoplay = true;
+      video.playsinline = true;
+      container.appendChild(video);
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        console.log("✅ Camera started");
+      } catch (err) {
+        console.error("❌ Camera access denied:", err);
+        alert("Camera access denied. Please allow permission in Chrome.");
+      }
+    }
+
+    // Handle file upload (future: use for face training)
+    document.getElementById("fileUpload").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        alert("✅ " + file.name + " uploaded for training!");
+      }
+    });
+  </script>
+</body>
+</html>
