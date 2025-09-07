@@ -1,134 +1,580 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gentle Face Recognition</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Memory Mate Advanced</title>
+
+  <!-- Tailwind CDN (quick prototyping) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #d7e3fc, #fce2e2);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
-      margin: 0;
-      text-align: center;
+    /* Simple additional styles */
+    :root{
+      --accent1:#ff6fb5;
+      --accent2:#b76cf6;
+      --card-bg: rgba(255,255,255,0.85);
+      --text:#2b0b3a;
     }
-
-    header {
-      margin-top: 30px;
+    body{
+      background: radial-gradient(circle at 10% 10%, #ffe0f0 0%, #ffd6ea 10%, #f1d9ff 45%, #e9f0ff 100%);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
-
-    header h1 {
-      font-size: 2.5rem;
-      color: #222;
-    }
-
-    header h1 span {
-      color: #0077ff;
-    }
-
-    header p {
-      color: #555;
-      margin-top: 5px;
-    }
-
-    .controls {
-      margin: 20px 0;
-    }
-
-    button {
-      margin: 10px;
-      padding: 12px 20px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-      font-weight: bold;
-    }
-
-    button:hover {
-      transform: scale(1.05);
-    }
-
-    .upload-btn {
-      background-color: #4db6ac;
-      color: white;
-    }
-
-    .webcam-btn {
-      background-color: #0077ff;
-      color: white;
-    }
-
-    #video-container {
-      margin-top: 20px;
-      border: 3px solid #0077ff;
-      border-radius: 12px;
-      overflow: hidden;
-      width: 500px;
-      height: 400px;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 1.2rem;
-    }
-
-    #video-container video {
-      width: 100%;
+    /* Left guidelines panel */
+    #guidelines {
+      position: fixed;
+      left: -300px;
+      top: 0;
+      width: 280px;
       height: 100%;
-      object-fit: cover;
+      background: linear-gradient(180deg,#fff7ed,#fff1f6);
+      box-shadow: 6px 6px 30px rgba(0,0,0,0.08);
+      padding:1.25rem;
+      transition:left .35s ease;
+      z-index:60;
+      overflow:auto;
+    }
+    #guidelines.open { left: 0; }
+    .guideline-toggle {
+      position: fixed;
+      left: 18px;
+      top: 18px;
+      z-index: 80;
+      background: linear-gradient(90deg,var(--accent1),var(--accent2));
+      color:white;
+      border-radius:12px;
+      padding:10px 14px;
+      box-shadow: 0 8px 30px rgba(183,108,246,0.22);
+      font-weight:600;
+    }
+    /* Big card */
+    .feature-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding:1.25rem;
+      box-shadow: 0 12px 40px rgba(183,108,246,0.08);
+      min-width:260px;
+    }
+    .big-btn{
+      display:inline-flex;align-items:center;gap:.75rem;
+      background: linear-gradient(90deg,var(--accent1),var(--accent2));
+      color:#fff;padding:.75rem 1.25rem;border-radius:12px;font-weight:700;
+      box-shadow: 0 10px 30px rgba(183,108,246,0.15);
+      transition: transform .18s ease, box-shadow .18s;
+      font-size:1.05rem;
+    }
+    .big-btn:hover { transform: translateY(-4px) scale(1.02); box-shadow:0 18px 40px rgba(183,108,246,0.20); }
+    /* page split */
+    main { max-width:1200px; margin: 30px auto; padding: 20px; }
+    section.page { min-height: 78vh; padding: 28px; margin-bottom: 36px; border-radius:14px; }
+    .page-1 { background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,250,255,0.65)); }
+    .page-2 { background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(245,245,255,0.8)); }
+    /* modals */
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center; z-index:90; }
+    .modal { background:white; border-radius:12px; padding:18px; width:92%; max-width:680px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
+    .modal.show { display:flex; }
+    /* quiz poster */
+    .poster { width:120px; height:160px; object-fit:cover; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.08);}
+    /* large readable text */
+    h1,h2 { line-height:1.05; }
+    .muted { color: #6b4a6f; opacity:.9; }
+    @media (max-width:700px){
+      .poster { display:none; }
+      #guidelines { display:none; }
+      .guideline-toggle{ left: 8px; top: 8px; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>💙 Gentle <span>Face Recognition</span> Care</h1>
-    <p>Helping Alzheimer’s patients recognize loved ones with compassion & tech</p>
-  </header>
 
-  <div class="controls">
-    <button class="upload-btn" onclick="document.getElementById('fileUpload').click()">📂 Upload & Train</button>
-    <input type="file" id="fileUpload" style="display: none" />
-    <button class="webcam-btn" onclick="startWebcam()">📷 Start Webcam</button>
+  <!-- Guidelines toggle + panel -->
+  <button class="guideline-toggle" onclick="toggleGuidelines()"><i class="fa-solid fa-book-open"></i> Guidelines</button>
+  <aside id="guidelines">
+    <h3 class="text-2xl font-bold mb-2">Memory Mate — Quick Guidelines</h3>
+    <p class="muted mb-3">Large text, simple actions — designed for calm and clarity.</p>
+    <ul class="text-lg space-y-3">
+      <li><strong>AI Notes:</strong> Tap Speak and talk — notes save locally.</li>
+      <li><strong>Camera:</strong> Tap Camera, allow access — use for recognition training.</li>
+      <li><strong>Music Therapy:</strong> Plays short familiar Tamil & motivational tracks — soothing.</li>
+      <li><strong>Games:</strong> Play Guess Song / Movie — one Q at a time. Tap an option then Next.</li>
+      <li><strong>Reminders:</strong> Save quick reminders — they persist in your browser.</li>
+    </ul>
+    <hr class="my-4"/>
+    <h4 class="font-semibold mb-1">Care tips</h4>
+    <ol class="list-decimal ml-5 space-y-2">
+      <li>Keep sessions short (5–10 mins).</li>
+      <li>Use familiar songs & photos.</li>
+      <li>Encourage smiles and praise on success.</li>
+    </ol>
+  </aside>
+
+  <main>
+
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-4xl font-extrabold">🧠 Memory Mate Advanced</h1>
+        <div class="muted">Companion for memory training, music therapy and safe reminders</div>
+      </div>
+      <div class="flex gap-3 items-center">
+        <button class="big-btn" onclick="openUpload()"> <i class="fa-solid fa-upload"></i> Upload & Train</button>
+        <button class="big-btn" onclick="exportData()"> <i class="fa-solid fa-file-export"></i> Export</button>
+      </div>
+    </header>
+
+    <!-- PAGE 1: Essentials -->
+    <section class="page page-1 grid lg:grid-cols-3 gap-6 items-start">
+      <!-- Left column: main features -->
+      <div class="space-y-6">
+        <div class="feature-card">
+          <h2 class="text-2xl font-bold mb-1">📝 AI Notes</h2>
+          <p class="muted mb-3">Type or press Speak — speech-to-text will transcribe for you. Saved notes are local.</p>
+          <div class="flex gap-3">
+            <button class="big-btn" onclick="openNotes()"> <i class="fa-solid fa-microphone"></i> Open AI Notes</button>
+            <button class="big-btn bg-white text-purple-800" onclick="saveNotesToStorage()"> Save</button>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <h2 class="text-2xl font-bold mb-1">📸 Camera & Face Rec</h2>
+          <p class="muted mb-3">Open camera and allow access. Use this for recognition training (future ML).</p>
+          <div class="flex gap-3">
+            <button class="big-btn" onclick="openCameraModal()"> <i class="fa-solid fa-camera"></i> Open Camera</button>
+            <button class="big-btn bg-white text-purple-800" onclick="stopCamera()"> Stop</button>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <h2 class="text-2xl font-bold mb-1">🔔 Smart Reminders</h2>
+          <p class="muted mb-3">Quickly set a reminder — stored locally so it persists on refresh.</p>
+          <div class="flex gap-3">
+            <input id="reminderInput" class="border rounded-xl px-3 py-2 w-full" placeholder="Type a reminder (e.g. Take water at 4pm)"/>
+            <button class="big-btn" onclick="addReminder()">Save</button>
+          </div>
+          <div id="remindersList" class="mt-3 text-lg"></div>
+        </div>
+      </div>
+
+      <!-- Middle column: big central card -->
+      <div class="feature-card flex flex-col items-center justify-center">
+        <h2 class="text-3xl font-bold mb-2">🎶 Music Therapy — Relax & Remember</h2>
+        <p class="muted mb-4 text-center">Short clips & familiar Tamil songs help memory recall. Press Play below.</p>
+        <div class="flex gap-3">
+          <button class="big-btn" onclick="openMusicPlayer()"> <i class="fa-solid fa-play"></i> Open Player</button>
+          <button class="big-btn bg-white text-purple-800" onclick="playRandom()"> Shuffle Play</button>
+        </div>
+        <div class="mt-4 w-full max-w-md text-left">
+          <ul id="playlist" class="space-y-2"></ul>
+        </div>
+      </div>
+
+      <!-- Right column: visual + quick actions -->
+      <div class="feature-card">
+        <h2 class="text-2xl font-bold mb-1">Quick Actions</h2>
+        <div class="mt-2 space-y-3">
+          <button class="big-btn w-full justify-center" onclick="startQuiz('song')"> <i class="fa-solid fa-music"></i> Guess Song</button>
+          <button class="big-btn w-full justify-center" onclick="startQuiz('movie')"> <i class="fa-solid fa-film"></i> Guess Movie</button>
+          <button class="big-btn w-full justify-center" onclick="openDailyChallenge()"> <i class="fa-solid fa-star"></i> Daily Challenge</button>
+        </div>
+        <hr class="my-4"/>
+        <h3 class="font-semibold">Progress</h3>
+        <p class="muted mt-2">Games played: <span id="gamesPlayed">0</span></p>
+      </div>
+    </section>
+
+    <!-- PAGE 2: Games -->
+    <section id="games-page" class="page page-2">
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="feature-card">
+          <h2 class="text-2xl font-bold mb-2">🎵 Guess the Song (Quiz)</h2>
+          <p class="muted mb-3">Listen to the short preview (if available) or read the hint — pick the right title.</p>
+          <div id="song-quiz-area" class="space-y-3">
+            <div class="flex gap-4 items-center">
+              <img id="songPoster" class="poster" src="" alt="poster"/>
+              <div>
+                <div id="songHint" class="text-xl font-semibold mb-2">Press Start to get a song</div>
+                <audio id="songPreview" controls class="w-full"></audio>
+              </div>
+            </div>
+            <div id="songOptions" class="grid grid-cols-1 gap-3"></div>
+            <div class="flex gap-3">
+              <button class="big-btn" onclick="nextSongQuestion()">Next</button>
+              <button class="big-btn bg-white text-purple-800" onclick="startQuiz('song')">Restart</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <h2 class="text-2xl font-bold mb-2">🎬 Guess the Movie (Quiz)</h2>
+          <p class="muted mb-3">See poster & hint — choose the correct movie.</p>
+          <div id="movie-quiz-area" class="space-y-3">
+            <div class="flex gap-4 items-center">
+              <img id="moviePoster" class="poster" src="" alt="poster"/>
+              <div>
+                <div id="movieHint" class="text-xl font-semibold mb-2">Press Start to get a movie</div>
+                <audio id="moviePreview" controls class="w-full"></audio>
+              </div>
+            </div>
+            <div id="movieOptions" class="grid grid-cols-1 gap-3"></div>
+            <div class="flex gap-3">
+              <button class="big-btn" onclick="nextMovieQuestion()">Next</button>
+              <button class="big-btn bg-white text-purple-800" onclick="startQuiz('movie')">Restart</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Hidden inputs + modals -->
+  <input id="fileInput" type="file" accept="image/*" style="display:none"/>
+  <div id="notes-modal" class="modal-backdrop">
+    <div class="modal">
+      <div class="flex justify-between items-start mb-3">
+        <h3 class="text-2xl font-bold">📝 AI Notes</h3>
+        <button class="text-sm px-3 py-2 rounded-md" onclick="closeNotes()">Close</button>
+      </div>
+      <textarea id="notesArea" class="w-full border p-3 rounded-lg" rows="6" placeholder="Speak or type here..."></textarea>
+      <div class="flex gap-3 mt-3">
+        <button class="big-btn" onclick="startSpeech()">🎤 Speak</button>
+        <button class="big-btn bg-white text-purple-800" onclick="saveNotesToStorage()">Save</button>
+        <button class="big-btn bg-white text-red-600" onclick="clearNotes()">Clear</button>
+      </div>
+    </div>
   </div>
 
-  <div id="video-container">
-    <span>Recognition Zone</span>
+  <div id="camera-modal" class="modal-backdrop">
+    <div class="modal">
+      <div class="flex justify-between items-start mb-3">
+        <h3 class="text-2xl font-bold">📸 Camera</h3>
+        <button class="text-sm px-3 py-2 rounded-md" onclick="closeCameraModal()">Close</button>
+      </div>
+      <video id="cameraVideo" autoplay playsinline style="width:100%;max-height:360px;border-radius:12px"></video>
+      <div class="flex gap-3 mt-3">
+        <button class="big-btn" onclick="capturePhoto()">📷 Capture</button>
+        <button class="big-btn bg-white text-purple-800" onclick="stopCamera()">Stop</button>
+      </div>
+      <div id="capturedPreview" class="mt-3"></div>
+    </div>
   </div>
 
-  <script>
-    async function startWebcam() {
-      const container = document.getElementById("video-container");
-      container.innerHTML = ""; // Clear placeholder text
+  <!-- Quiz Result / Info modal -->
+  <div id="smallModal" class="modal-backdrop">
+    <div class="modal">
+      <div id="smallModalContent"></div>
+      <div class="mt-4 flex justify-end">
+        <button class="big-btn" onclick="closeSmallModal()">OK</button>
+      </div>
+    </div>
+  </div>
 
-      const video = document.createElement("video");
-      video.autoplay = true;
-      video.playsinline = true;
-      container.appendChild(video);
+<script>
+  /* ------- Helpers & state ------- */
+  const storageKey = 'memorymate_data_v1';
+  let state = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  if (!state.notes) state.notes = '';
+  if (!state.reminders) state.reminders = [];
+  if (!state.gamesPlayed) state.gamesPlayed = 0;
+  // update UI with stored values
+  document.addEventListener('DOMContentLoaded', () => {
+    populatePlaylist();
+    renderReminders();
+    document.getElementById('gamesPlayed').innerText = state.gamesPlayed || 0;
+  });
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        console.log("✅ Camera started");
-      } catch (err) {
-        console.error("❌ Camera access denied:", err);
-        alert("Camera access denied. Please allow permission in Chrome.");
-      }
+  /* ------- Guidelines toggle ------- */
+  function toggleGuidelines(){
+    document.getElementById('guidelines').classList.toggle('open');
+  }
+
+  /* ------- Upload & Export ------- */
+  function openUpload(){
+    document.getElementById('fileInput').click();
+  }
+  document.getElementById('fileInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    showSmallModal(`Uploaded: ${file.name}. (You can use this file for training later.)`);
+  });
+  function exportData(){
+    const data = JSON.stringify(state, null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'memorymate_export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /* ------- Notes modal & speech ------- */
+  function openNotes(){
+    document.getElementById('notesArea').value = state.notes || '';
+    document.getElementById('notes-modal').style.display = 'flex';
+  }
+  function closeNotes(){ document.getElementById('notes-modal').style.display = 'none'; }
+  function saveNotesToStorage(){
+    const text = document.getElementById('notesArea') ? document.getElementById('notesArea').value : document.getElementById('noteText')?.value;
+    state.notes = text || '';
+    localStorage.setItem(storageKey, JSON.stringify(state));
+    showSmallModal('Notes saved locally.');
+    closeNotes();
+  }
+  function clearNotes(){
+    document.getElementById('notesArea').value = '';
+    state.notes = '';
+    localStorage.setItem(storageKey, JSON.stringify(state));
+  }
+
+  // Speech recognition (Chrome)
+  let speechRec;
+  function startSpeech(){
+    if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)){
+      alert('Speech recognition not supported in this browser. Use Chrome.');
+      return;
     }
+    const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    speechRec = new Rec();
+    speechRec.lang = 'en-IN';
+    speechRec.interimResults = false;
+    speechRec.maxAlternatives = 1;
+    speechRec.onresult = (evt) => {
+      const spoken = evt.results[0][0].transcript || '';
+      const ta = document.getElementById('notesArea');
+      ta.value = (ta.value ? ta.value + ' ' : '') + spoken;
+    };
+    speechRec.onerror = (err) => { console.log('Speech error', err); showSmallModal('Voice error: ' + (err.error || 'unknown')); };
+    speechRec.start();
+  }
 
-    // Handle file upload (future: use for face training)
-    document.getElementById("fileUpload").addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      if (file) {
-        alert("✅ " + file.name + " uploaded for training!");
-      }
+  /* ------- Reminders ------- */
+  function addReminder(){
+    const text = document.getElementById('reminderInput').value.trim();
+    if(!text) { showSmallModal('Type something to save as reminder'); return; }
+    state.reminders.push({text, time: new Date().toLocaleString()});
+    localStorage.setItem(storageKey, JSON.stringify(state));
+    document.getElementById('reminderInput').value = '';
+    renderReminders();
+  }
+  function renderReminders(){
+    const list = document.getElementById('remindersList'); list.innerHTML = '';
+    if(!state.reminders || state.reminders.length===0){ list.innerHTML = '<div class="muted">No reminders set.</div>'; return; }
+    state.reminders.slice().reverse().forEach(r => {
+      const div = document.createElement('div'); div.className='border rounded-lg p-2 mb-2 bg-white';
+      div.innerHTML = `<strong>${r.text}</strong><div class="muted text-sm">${r.time}</div>`;
+      list.appendChild(div);
     });
-  </script>
+  }
+
+  /* ------- Camera (asks permission) ------- */
+  let cameraStream = null;
+  async function openCameraModal(){
+    document.getElementById('camera-modal').style.display = 'flex';
+    await startCamera();
+  }
+  async function startCamera(){
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}, audio:false});
+      const v = document.getElementById('cameraVideo');
+      v.srcObject = cameraStream;
+      v.play();
+    } catch(err){
+      showSmallModal('Camera access denied or not available. Please allow camera permission in your browser.');
+    }
+  }
+  function stopCamera(){
+    if(cameraStream){ cameraStream.getTracks().forEach(t=>t.stop()); cameraStream = null; }
+  }
+  function closeCameraModal(){
+    stopCamera(); document.getElementById('camera-modal').style.display = 'none';
+  }
+  function capturePhoto(){
+    if(!cameraStream) { showSmallModal('Camera not active'); return; }
+    const v = document.getElementById('cameraVideo');
+    const canvas = document.createElement('canvas'); canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+    const ctx = canvas.getContext('2d'); ctx.drawImage(v,0,0,canvas.width,canvas.height);
+    const imgURL = canvas.toDataURL('image/jpeg', 0.8);
+    const preview = document.getElementById('capturedPreview'); preview.innerHTML = `<img src="${imgURL}" alt="capture" class="rounded-lg w-48">`;
+    showSmallModal('Photo captured. (You can use this image for training later.)');
+  }
+
+  /* ------- Small modal helper ------- */
+  function showSmallModal(html){
+    document.getElementById('smallModalContent').innerHTML = html;
+    document.getElementById('smallModal').style.display = 'flex';
+  }
+  function closeSmallModal(){ document.getElementById('smallModal').style.display = 'none'; }
+
+  /* ------- Music Therapy (playlist + player) ------- */
+  // NOTE: Replace poster and preview URLs with actual MP3s/posters you host.
+  const songs = [
+    { title: 'Meesaya Murukku (Title Track)', artist:'Hip Hop Tamizha', poster:'https://i.imgur.com/4YQ2QvS.jpg', preview:'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/AFTERHOURS_/Afterhours_-_01_-_Slow_Motion.mp3' },
+    { title: 'Vetri Kodi Kattu (Motivational)', artist:'Performer', poster:'https://i.imgur.com/uY2Xh1P.jpg', preview:'https://www2.cs.uic.edu/~i101/SoundFiles/StarWars60.wav' },
+    { title: 'Unstoppable (Motivation)', artist:'Sia', poster:'https://i.imgur.com/obP2w0E.jpg', preview:'https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav' },
+    { title: 'Enjoy Enjaami', artist:'Arivu/Margazhi', poster:'https://i.imgur.com/ZQFQGfW.jpg', preview:'https://www2.cs.uic.edu/~i101/SoundFiles/CantinaBand60.wav' },
+    { title: 'Vaathi Coming', artist:'Anirudh', poster:'https://i.imgur.com/2kq0i9b.jpg', preview:'https://www2.cs.uic.edu/~i101/SoundFiles/ImperialMarch60.wav' }
+  ];
+  function populatePlaylist(){
+    const ul = document.getElementById('playlist'); ul.innerHTML = '';
+    songs.forEach((s, idx)=>{
+      const li = document.createElement('li'); li.className='flex items-center gap-3 bg-white p-2 rounded-lg';
+      li.innerHTML = `<img src="${s.poster}" class="w-16 h-20 object-cover rounded-md"><div><div class="font-semibold">${s.title}</div><div class="muted text-sm">${s.artist}</div></div><div class="ml-auto"><button class="big-btn" onclick="playSong(${idx})">Play</button></div>`;
+      ul.appendChild(li);
+    });
+  }
+  function openMusicPlayer(){ // show a small modal with list & main player
+    const html = `<h3 class="text-xl font-bold mb-2">Music Therapy Player</h3>
+      <p class="muted mb-2">Familiar Tamil & motivational tracks</p>
+      <div id="miniPlaylist" class="space-y-2"></div>
+      <audio id="mainPlayer" controls class="w-full mt-3"></audio>`;
+    showSmallModal(html);
+    // fill mini playlist
+    const mini = document.getElementById('miniPlaylist');
+    songs.forEach((s, idx)=>{
+      const b = document.createElement('div'); b.className='flex items-center gap-3 bg-white p-2 rounded-lg';
+      b.innerHTML = `<img src="${s.poster}" class="w-12 h-14 object-cover rounded-md"><div><strong>${s.title}</strong><div class="muted text-sm">${s.artist}</div></div><div class="ml-auto"><button class="big-btn" onclick="playFromModal(${idx})">Play</button></div>`;
+      mini.appendChild(b);
+    });
+  }
+  function playFromModal(idx){
+    const mp = document.getElementById('mainPlayer');
+    mp.src = songs[idx].preview;
+    mp.play();
+  }
+  function playSong(idx){
+    const audio = document.getElementById('songPreview');
+    audio.src = songs[idx].preview;
+    audio.play();
+    document.getElementById('songHint').innerText = songs[idx].title + ' — ' + songs[idx].artist;
+    document.getElementById('songPoster').src = songs[idx].poster;
+  }
+  function playRandom(){
+    const idx = Math.floor(Math.random()*songs.length);
+    playSong(idx);
+    showSmallModal('Now playing: ' + songs[idx].title);
+  }
+
+  /* ------- Quizzes (Song & Movie) ------- */
+  // Movies: include poster + short preview (replace with your resources)
+  const movies = [
+    { title:'Baasha', hint:'Rajinikanth plays a don', poster:'https://i.imgur.com/1b1I3yF.jpg', preview:'' },
+    { title:'Anniyan', hint:'A man with multiple personalities', poster:'https://i.imgur.com/3h6j3xJ.jpg', preview:'' },
+    { title:'Ghilli', hint:'A kabaddi-focused action film', poster:'https://i.imgur.com/2i3Y4oK.jpg', preview:'' },
+    { title:'Mankatha', hint:'A heist and thriller', poster:'https://i.imgur.com/8m1JZzg.jpg', preview:'' },
+    { title:'Sivaji', hint:'A rich man fights corruption', poster:'https://i.imgur.com/0w3t7bX.jpg', preview:'' },
+    { title:'Theri', hint:'A cop hides his identity', poster:'https://i.imgur.com/9w4o3NM.jpg', preview:'' },
+    { title:'Viswasam', hint:'Family & action starring Ajith', poster:'https://i.imgur.com/5kz6L5t.jpg', preview:'' },
+    { title:'Mersal', hint:'Magic & revenge theme', poster:'https://i.imgur.com/n4q3hY9.jpg', preview:'' },
+    { title:'Kaaka Kaaka', hint:'A cop drama', poster:'https://i.imgur.com/X4q9dQf.jpg', preview:'' },
+    { title:'7aum Arivu', hint:'Science-fiction with historical flashbacks', poster:'https://i.imgur.com/4gY9bLu.jpg', preview:'' }
+  ];
+
+  // Build song quiz bank (using song titles from songs[] and distractors)
+  const songQuizBank = [
+    { hint: 'Which is the Hip Hop Tamizha title track?', correct: 'Meesaya Murukku', choices: ['Meesaya Murukku','Vaathi Coming','Enjoy Enjaami','Unakkenna Venum'] },
+    { hint: 'Which song is an international motivational pop?', correct: 'Unstoppable', choices: ['Unstoppable','Vaathi Coming','Roja Kadale','Why This Kolaveri'] },
+    { hint: 'Which was a viral Tamil folk-fusion?', correct: 'Enjoy Enjaami', choices: ['Enjoy Enjaami','Meesaya Murukku','Mukkala Mukkabala','Kandukonden Kandukonden'] },
+    { hint: 'Which song features Anirudh’s signature hook?', correct: 'Vaathi Coming', choices: ['Vaathi Coming','Meesaya Murukku','Why This Kolaveri','Nila Kaigirathu'] },
+    { hint: 'Which song is from a motivating movie theme?', correct: 'Vetri Kodi Kattu', choices: ['Vetri Kodi Kattu','Unakkenna Venum','Roja Kadale','Arabikku Kuthu'] }
+  ];
+
+  // Movie quiz bank (shuffle subset each run)
+  const movieQuizBank = movies.map(m => ({ hint: m.hint, correct: m.title, poster: m.poster, choices: [m.title] }));
+
+  // Helper to shuffle array
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
+
+  // State for quizzes
+  let quizState = { type:'', idx:0, bank:[] };
+
+  function startQuiz(type){
+    quizState.type = type;
+    quizState.idx = 0;
+    if(type === 'song'){
+      // clone and shuffle the song bank
+      quizState.bank = shuffle(JSON.parse(JSON.stringify(songQuizBank)));
+      showSongQuestion();
+      // scroll to page 2 if needed
+      document.getElementById('games-page').scrollIntoView({behavior:'smooth'});
+    } else {
+      // build choices for each movie by sampling other titles
+      const bank = shuffle(movies.slice()).slice(0,10).map(m=>{
+        const distractors = shuffle(movies.filter(x=>x.title!==m.title)).slice(0,3).map(d=>d.title);
+        return { hint: m.hint, poster: m.poster, correct: m.title, choices: shuffle([m.title, ...distractors]) };
+      });
+      quizState.bank = bank;
+      showMovieQuestion();
+      document.getElementById('games-page').scrollIntoView({behavior:'smooth'});
+    }
+  }
+
+  function showSongQuestion(){
+    const q = quizState.bank[quizState.idx];
+    document.getElementById('songHint').innerText = q.hint;
+    // set poster to a related one (if match found) else blank
+    const match = songs.find(s=> s.title.toLowerCase().includes(q.correct.toLowerCase().split(' ')[0]));
+    document.getElementById('songPoster').src = (match ? match.poster : 'https://i.imgur.com/4YQ2QvS.jpg');
+    // audio preview: try find preview by title or leave blank
+    document.getElementById('songPreview').src = (match ? match.preview : '');
+    // build options
+    const optDiv = document.getElementById('songOptions'); optDiv.innerHTML = '';
+    q.choices.forEach(choice=>{
+      const b = document.createElement('button');
+      b.className = 'big-btn w-full justify-start';
+      b.style.padding = '.6rem 1rem';
+      b.innerText = choice;
+      b.onclick = ()=>{ checkAnswer(choice, q.correct); };
+      optDiv.appendChild(b);
+    });
+  }
+  function showMovieQuestion(){
+    const q = quizState.bank[quizState.idx];
+    document.getElementById('movieHint').innerText = q.hint;
+    document.getElementById('moviePoster').src = q.poster;
+    document.getElementById('moviePreview').src = ''; // no audio for poster
+    const optDiv = document.getElementById('movieOptions'); optDiv.innerHTML = '';
+    q.choices.forEach(choice=>{
+      const b = document.createElement('button');
+      b.className = 'big-btn w-full justify-start';
+      b.style.padding = '.6rem 1rem';
+      b.innerText = choice;
+      b.onclick = ()=>{ checkAnswer(choice, q.correct); };
+      optDiv.appendChild(b);
+    });
+  }
+
+  function checkAnswer(pick, correct){
+    if(pick === correct){
+      state.gamesPlayed = (state.gamesPlayed||0) + 1;
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      document.getElementById('gamesPlayed').innerText = state.gamesPlayed;
+      showSmallModal(`<div class="text-green-700 font-bold">✅ Correct! — ${correct}</div>`);
+    } else {
+      showSmallModal(`<div class="text-red-600 font-bold">❌ Wrong answer.<br/>Correct was: <strong>${correct}</strong></div>`);
+    }
+  }
+
+  function nextSongQuestion(){
+    quizState.idx++;
+    if(quizState.idx >= quizState.bank.length){ showSmallModal('Song quiz finished 🎉'); return; }
+    showSongQuestion();
+  }
+  function nextMovieQuestion(){
+    quizState.idx++;
+    if(quizState.idx >= quizState.bank.length){ showSmallModal('Movie quiz finished 🎉'); return; }
+    showMovieQuestion();
+  }
+
+  /* ------- Daily challenge (simple) ------- */
+  function openDailyChallenge(){
+    showSmallModal(`<h3 class="text-xl font-bold">Daily Memory Prompt</h3>
+      <p class="muted">Try to recall the names of three people you saw today, or sing a favorite line from a song.</p>`);
+  }
+
+</script>
+
 </body>
 </html>
